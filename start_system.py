@@ -16,7 +16,6 @@ def check_requirements():
         import fastapi
         import streamlit
         import groq
-        import plotly
         import pandas
         import sqlalchemy
         print("✅ All required packages are installed")
@@ -27,52 +26,34 @@ def check_requirements():
         return False
 
 def check_env_file():
-    """Check if .env file exists and has required keys"""
+    """Check if .env file exists and has GROQ key"""
     env_file = Path(".env")
     if not env_file.exists():
         print("❌ .env file not found")
-        print("Please copy env_template.txt to .env and add your API keys")
+        print("Please create a .env file with your GROQ_API_KEY")
         return False
     
     with open(env_file) as f:
         content = f.read()
         
-    required_keys = ["GROQ_API_KEY", "DATA_GOV_API_KEY_CROP", "DATA_GOV_API_KEY_RAINFALL"]
-    missing_keys = []
-    
-    for key in required_keys:
-        if f"{key}=your_" in content or f"{key}=" not in content:
-            missing_keys.append(key)
-    
-    if missing_keys:
-        print(f"❌ Missing API keys in .env: {', '.join(missing_keys)}")
+    if "GROQ_API_KEY=" not in content or "your_" in content:
+        print("❌ GROQ_API_KEY not found or not set in .env")
         return False
     
     print("✅ Environment variables configured")
     return True
 
-def create_database():
-    """Create database tables"""
-    try:
-        sys.path.append("backend")
-        from backend.app.database.models import create_tables
-        create_tables()
-        print("✅ Database tables created")
-        return True
-    except Exception as e:
-        print(f"❌ Error creating database: {e}")
+# --- NEW FUNCTION ---
+def check_database_exists():
+    """Check if the database file was created by seed_data.py"""
+    db_file = Path("project_samarth.db")
+    if not db_file.exists():
+        print(f"❌ Database not found: {db_file.resolve()}")
+        print("This file should be in your main project folder.")
+        print("Please re-run: python seed_data.py (as Administrator)")
         return False
-
-def seed_sample_data():
-    """Ask user if they want to seed sample data"""
-    response = input("\nDo you want to create sample data for testing? (y/n): ").lower()
-    if response == 'y':
-        try:
-            subprocess.run([sys.executable, "seed_data.py"], check=True)
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error seeding data: {e}")
-            return False
+    
+    print("✅ Database file found.")
     return True
 
 def start_backend():
@@ -127,13 +108,11 @@ def main():
     if not check_env_file():
         return
     
-    # Create database
-    if not create_database():
+    # --- MODIFIED: Check for DB, don't create it ---
+    if not check_database_exists():
         return
     
-    # Seed sample data
-    if not seed_sample_data():
-        return
+    # --- REMOVED: Redundant seed_sample_data() call ---
     
     print("\n🎯 Starting Project Samarth...")
     

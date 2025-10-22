@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Dict, List, Any, Optional
+from sqlalchemy import text
 import logging
 import os
 from dotenv import load_dotenv
@@ -72,15 +73,15 @@ async def startup_event():
     
     # Check API keys
     groq_key = os.getenv("GROQ_API_KEY")
-    crop_key = os.getenv("DATA_GOV_API_KEY_CROP")
-    rainfall_key = os.getenv("DATA_GOV_API_KEY_RAINFALL")
+    # crop_key = os.getenv("DATA_GOV_API_KEY_CROP")
+    # rainfall_key = os.getenv("DATA_GOV_API_KEY_RAINFALL")
     
     if not groq_key:
         logger.warning("GROQ_API_KEY not found in environment variables")
-    if not crop_key:
-        logger.warning("DATA_GOV_API_KEY_CROP not found in environment variables")
-    if not rainfall_key:
-        logger.warning("DATA_GOV_API_KEY_RAINFALL not found in environment variables")
+    # if not crop_key:
+    #     logger.warning("DATA_GOV_API_KEY_CROP not found in environment variables")
+    # if not rainfall_key:
+    #     logger.warning("DATA_GOV_API_KEY_RAINFALL not found in environment variables")
 
 @app.get("/", response_model=Dict[str, str])
 async def root():
@@ -96,8 +97,9 @@ async def health_check(db: Session = Depends(get_db)):
     """Health check endpoint"""
     try:
         # Test database connection
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db_status = "connected"
+        logger.info("Database connection successful")
     except Exception as e:
         logger.error(f"Database connection error: {e}")
         db_status = "disconnected"
@@ -105,14 +107,14 @@ async def health_check(db: Session = Depends(get_db)):
     # Check API keys
     api_keys = {
         "groq": bool(os.getenv("GROQ_API_KEY")),
-        "crop_data": bool(os.getenv("DATA_GOV_API_KEY_CROP")),
-        "rainfall_data": bool(os.getenv("DATA_GOV_API_KEY_RAINFALL"))
+        # "crop_data": bool(os.getenv("DATA_GOV_API_KEY_CROP")),
+        # "rainfall_data": bool(os.getenv("DATA_GOV_API_KEY_RAINFALL"))
     }
     
     # Get agent status
-    orchestrator = AgentOrchestrator(db)
+    orchestrator = AgentOrchestrator(db) 
+    logger.info("This is db: ", db) 
     agents = orchestrator.get_agent_status()
-    
     return HealthResponse(
         status="healthy" if db_status == "connected" else "unhealthy",
         agents=agents,

@@ -100,7 +100,7 @@ class QueryUnderstandingAgent(BaseAgent):
             # Parse the response to extract structured data
             # For now, we'll do basic parsing - in production, use proper tool calling
             entities = self._parse_entities_from_response(user_question, response)
-            
+            logger.info("Llm called for Query Understanding")
             result = {
                 "original_question": user_question,
                 "extracted_entities": entities,

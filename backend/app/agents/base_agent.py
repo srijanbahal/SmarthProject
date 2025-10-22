@@ -4,14 +4,24 @@ from groq import Groq
 import json
 import logging
 import os
+import httpx
 
 logger = logging.getLogger(__name__)
 
 class BaseAgent(ABC):
-    def __init__(self, name: str, model: str = "llama3-8b-8192"):
+    def __init__(self, name: str, model: str = "llama-3.3-70b-versatile"):
         self.name = name
         self.model = model
-        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        # self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        # 1. Create an httpx client with proxies explicitly set to None
+        http_client = httpx.Client(proxies=None)
+        
+        # 2. Pass this client to Groq
+        self.client = Groq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            http_client=http_client
+        )
+        logger.info("base Agent Constructor here hai !!!!!!!!!!!!!!!!!!!")
         self.conversation_history = []
     
     @abstractmethod
@@ -30,7 +40,7 @@ class BaseAgent(ABC):
                 model=self.model,
                 messages=messages,
                 tools=tools,
-                tool_choice="auto" if tools else None,
+                tool_choice="auto" if tools else "none",
                 temperature=0.1
             )
             

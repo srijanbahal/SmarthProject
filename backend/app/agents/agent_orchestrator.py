@@ -1,6 +1,9 @@
 from typing import Dict, List, Any
 import logging
 from sqlalchemy.orm import Session
+from groq import Groq
+import httpx
+import os
 
 from .query_understanding_agent import QueryUnderstandingAgent
 from .data_retrieval_agent import DataRetrievalAgent
@@ -13,6 +16,15 @@ logger = logging.getLogger(__name__)
 class AgentOrchestrator:
     def __init__(self, db: Session):
         self.db = db
+        logger.info("constructor done")
+        # 1. Create an httpx client with proxies explicitly set to None
+        http_client = httpx.Client(proxies=None)
+        
+        # 2. Pass this client to Groq
+        groq_client = Groq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            http_client=http_client
+        )
         self.query_agent = QueryUnderstandingAgent()
         self.data_agent = DataRetrievalAgent(db)
         self.analysis_agent = AnalysisAgent()

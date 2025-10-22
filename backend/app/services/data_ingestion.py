@@ -1,248 +1,181 @@
-import httpx
-import pandas as pd
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
-import logging
-from typing import List, Dict, Optional
 import os
-from ..database.models import CropProduction, Rainfall, DataCacheMetadata
+import requests
+import pandas as pd
+import sqlite3
+from chromadb.utils import embedding_functions
+from langchain_community.vectorstores import Chroma
+import logging
 
-logger = logging.getLogger(__name__)
+
+# Define column maps (WHAT YOUR SCRIPT NEEDS)
+CROP_COLUMNS_EXPECTED = {
+    'State_Name': 'state',
+    'District_Name': 'district',
+    'Crop_Year': 'year',
+    'Season': 'season',
+    'Crop': 'crop',
+    'Area': 'area',
+    'Production': 'production'
+}
+
+RAIN_COLUMNS_EXPECTED = {
+    'State': 'state',
+    'District': 'district',
+    'Year': 'year',
+    'Month': 'month',
+    'Avg_rainfall': 'rainfall'
+}
+
 
 class DataIngestionService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.crop_api_key = os.getenv("DATA_GOV_API_KEY_CROP")
-        self.rainfall_api_key = os.getenv("DATA_GOV_API_KEY_RAINFALL")
-        
-    async def fetch_crop_data(self, limit: int = 1000) -> List[Dict]:
-        """Fetch crop production data from API and filter for UP"""
-        try:
-            async with httpx.AsyncClient() as client:
-                # This is a placeholder URL - replace with actual data.gov.in API endpoint
-                url = f"https://api.data.gov.in/resource/crop-production-data"
-                params = {
-                    "api-key": self.crop_api_key,
-                    "format": "json",
-                    "limit": limit,
-                    "filters[state]": "Uttar Pradesh"
-                }
-                
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                
-                data = response.json()
-                records = data.get("records", [])
-                
-                # Filter for UP state
-                up_records = [
-                    record for record in records 
-                    if record.get("state", "").lower() == "uttar pradesh"
-                ]
-                
-                logger.info(f"Fetched {len(up_records)} UP crop records")
-                return up_records
-                
-        except Exception as e:
-            logger.error(f"Error fetching crop data: {e}")
-            return []
-    
-    async def fetch_rainfall_data(self, limit: int = 1000) -> List[Dict]:
-        """Fetch rainfall data from API and filter for UP"""
-        try:
-            async with httpx.AsyncClient() as client:
-                # This is a placeholder URL - replace with actual data.gov.in API endpoint
-                url = f"https://api.data.gov.in/resource/rainfall-data"
-                params = {
-                    "api-key": self.rainfall_api_key,
-                    "format": "json",
-                    "limit": limit,
-                    "filters[state]": "Uttar Pradesh"
-                }
-                
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                
-                data = response.json()
-                records = data.get("records", [])
-                
-                # Filter for UP state
-                up_records = [
-                    record for record in records 
-                    if record.get("state", "").lower() == "uttar pradesh"
-                ]
-                
-                logger.info(f"Fetched {len(up_records)} UP rainfall records")
-                return up_records
-                
-        except Exception as e:
-            logger.error(f"Error fetching rainfall data: {e}")
-            return []
-    
-    def store_crop_data(self, records: List[Dict], source_url: str):
-        """Store crop production data in database"""
-        try:
-            stored_count = 0
-            for record in records:
-                # Check if record already exists
-                existing = self.db.query(CropProduction).filter(
-                    CropProduction.state == record.get("state"),
-                    CropProduction.district == record.get("district"),
-                    CropProduction.crop_year == record.get("crop_year"),
-                    CropProduction.season == record.get("season"),
-                    CropProduction.crop == record.get("crop")
-                ).first()
-                
-                if not existing:
-                    crop_record = CropProduction(
-                        state=record.get("state"),
-                        district=record.get("district"),
-                        crop_year=record.get("crop_year"),
-                        season=record.get("season"),
-                        crop=record.get("crop"),
-                        area=record.get("area"),
-                        production=record.get("production"),
-                        source_url=source_url
-                    )
-                    self.db.add(crop_record)
-                    stored_count += 1
-            
-            self.db.commit()
-            logger.info(f"Stored {stored_count} new crop records")
-            
-            # Update metadata
-            self._update_cache_metadata("crop_production", source_url, stored_count)
-            
-        except Exception as e:
-            logger.error(f"Error storing crop data: {e}")
-            self.db.rollback()
-    
-    def store_rainfall_data(self, records: List[Dict], source_url: str):
-        """Store rainfall data in database"""
-        try:
-            stored_count = 0
-            for record in records:
-                # Parse date
-                date_str = record.get("date")
-                if date_str:
-                    try:
-                        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                    except:
-                        date_obj = datetime.now()
-                else:
-                    date_obj = datetime.now()
-                
-                # Check if record already exists
-                existing = self.db.query(Rainfall).filter(
-                    Rainfall.state == record.get("state"),
-                    Rainfall.district == record.get("district"),
-                    Rainfall.date == date_obj
-                ).first()
-                
-                if not existing:
-                    rainfall_record = Rainfall(
-                        state=record.get("state"),
-                        district=record.get("district"),
-                        date=date_obj,
-                        year=record.get("year"),
-                        month=record.get("month"),
-                        avg_rainfall=record.get("avg_rainfall"),
-                        agency_name=record.get("agency_name"),
-                        source_url=source_url
-                    )
-                    self.db.add(rainfall_record)
-                    stored_count += 1
-            
-            self.db.commit()
-            logger.info(f"Stored {stored_count} new rainfall records")
-            
-            # Update metadata
-            self._update_cache_metadata("rainfall", source_url, stored_count)
-            
-        except Exception as e:
-            logger.error(f"Error storing rainfall data: {e}")
-            self.db.rollback()
-    
-    def _update_cache_metadata(self, data_source: str, source_url: str, new_records: int):
-        """Update cache metadata"""
-        metadata = self.db.query(DataCacheMetadata).filter(
-            DataCacheMetadata.data_source == data_source
-        ).first()
-        
-        if metadata:
-            metadata.last_sync = datetime.utcnow()
-            metadata.total_records += new_records
-            metadata.source_url = source_url
-        else:
-            metadata = DataCacheMetadata(
-                data_source=data_source,
-                last_sync=datetime.utcnow(),
-                total_records=new_records,
-                source_url=source_url
-            )
-            self.db.add(metadata)
-        
-        self.db.commit()
-    
-    async def sync_all_data(self):
-        """Sync all data sources"""
-        logger.info("Starting data sync...")
-        # Try to load crop data from local CSV first
-        crop_csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "..", "data", "crop_data_raw_UP.csv")
-        # The above resolves to repository root; normalize path
-        crop_csv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "crop_data_raw_UP.csv"))
+    def __init__(self, db_path='project_samarth.db', vector_db_path='chroma_db'):
+        # ... (keep existing __init__)
+        self.db_path = db_path
+        self.vector_db_path = vector_db_path
+        self.conn = sqlite3.connect(self.db_path)
+        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="all-MiniLM-L6-v2"
+        )
+        self.vector_store = Chroma(
+            persist_directory=self.vector_db_path,
+            embedding_function=self.embedding_function
+        )
 
-        crop_records = []
-        if os.path.exists(crop_csv_path):
-            try:
-                df = pd.read_csv(crop_csv_path)
-                # Convert DataFrame rows to dict records matching expected keys
-                crop_records = df.where(pd.notnull(df), None).to_dict(orient="records")
-                logger.info(f"Loaded {len(crop_records)} crop records from {crop_csv_path}")
-                self.store_crop_data(crop_records, f"file://{crop_csv_path}")
-            except Exception as e:
-                logger.error(f"Error reading crop CSV {crop_csv_path}: {e}")
-        else:
-            # Fallback to API fetch
-            crop_records = await self.fetch_crop_data()
-            if crop_records:
-                self.store_crop_data(crop_records, "https://api.data.gov.in/resource/crop-production-data")
-
-        # Try to load rainfall data from local CSV first
-        rainfall_csv_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "rainfall_data_raw_UP.csv"))
-
-        rainfall_records = []
-        if os.path.exists(rainfall_csv_path):
-            try:
-                df = pd.read_csv(rainfall_csv_path)
-                rainfall_records = df.where(pd.notnull(df), None).to_dict(orient="records")
-                logger.info(f"Loaded {len(rainfall_records)} rainfall records from {rainfall_csv_path}")
-                # Normalize date column if present to ISO string or expected format
-                for rec in rainfall_records:
-                    if rec.get("date") and isinstance(rec.get("date"), str):
-                        # keep as-is; store_rainfall_data will parse
-                        pass
-                self.store_rainfall_data(rainfall_records, f"file://{rainfall_csv_path}")
-            except Exception as e:
-                logger.error(f"Error reading rainfall CSV {rainfall_csv_path}: {e}")
-        else:
-            # Fallback to API fetch
-            rainfall_records = await self.fetch_rainfall_data()
-            if rainfall_records:
-                self.store_rainfall_data(rainfall_records, "https://api.data.gov.in/resource/rainfall-data")
-        
-        logger.info("Data sync completed")
     
-    def get_data_sources(self) -> List[Dict]:
-        """Get all data sources with metadata"""
-        sources = self.db.query(DataCacheMetadata).all()
-        return [
-            {
-                "data_source": source.data_source,
-                "last_sync": source.last_sync,
-                "total_records": source.total_records,
-                "source_url": source.source_url,
-                "last_updated": source.last_updated
-            }
-            for source in sources
-        ]
+    def ingest_data_from_csv(self, file_path, source_name):
+        """
+        Ingests data from a local CSV file.
+        """
+        try:
+            logging.info(f"Reading data from CSV: {file_path}")
+            df = pd.read_csv(file_path)
+            
+            logging.info(f"Original columns for {source_name}: {df.columns.tolist()}")
+
+            # Clean and store the data
+            df_cleaned = self.clean_data(df, source_name)
+            
+            if df_cleaned is not None:
+                self.store_in_sql(df_cleaned, source_name)
+                self.store_in_vector_db(df_cleaned, source_name)
+                logging.info(f"Successfully ingested data for {source_name} from CSV.")
+            else:
+                logging.error(f"Data cleaning failed for {source_name}.")
+
+        except FileNotFoundError:
+            logging.error(f"File not found: {file_path}")
+        except Exception as e:
+            logging.error(f"Error ingesting data from {file_path}: {e}")
+    # ====================================================================
+    
+    def ingest_data_from_api(self, api_url, source_name):
+        # This function is now OBSOLETE, but we leave it
+        logging.warning(f"Skipping API ingestion for {source_name}. Using local CSVs.")
+        pass
+
+    def fetch_data(self, api_url):
+        # This function is now OBSOLETE
+        pass
+
+    def clean_data(self, df, source_name):
+        """
+        Cleans the data based on the source.
+        This MUST be updated for your UP data.
+        """
+        try:
+            if source_name == 'crop_production':
+                # --- UPDATE THIS FOR YOUR CROP CSV ---
+                df = df.rename(columns=CROP_COLUMNS_EXPECTED)
+                
+                # Keep only the columns we care about
+                required_cols = ['state', 'district', 'year', 'season', 'crop', 'area', 'production']
+                df = df[required_cols]
+                
+                # Convert types
+                df['area'] = pd.to_numeric(df['area'], errors='coerce')
+                df['production'] = pd.to_numeric(df['production'], errors='coerce')
+                df['year'] = pd.to_numeric(df['year'], errors='coerce')
+                
+                # Fill missing data
+                df.fillna({'production': 0, 'area': 0}, inplace=True)
+                
+                # Standardize text
+                df['district'] = df['district'].str.strip().str.upper()
+                df['crop'] = df['crop'].str.strip().str.title()
+                
+            elif source_name == 'rainfall':
+                # --- UPDATE THIS FOR YOUR RAINFALL CSV ---
+                df = df.rename(columns=RAIN_COLUMNS_EXPECTED)
+                
+                # Keep only the columns we care about
+                required_cols = ['state', 'district', 'year', 'month', 'rainfall']
+                df = df[required_cols]
+                
+                # Convert types
+                df['rainfall'] = pd.to_numeric(df['rainfall'], errors='coerce')
+                df['year'] = pd.to_numeric(df['year'], errors='coerce')
+                
+                # Fill missing data
+                df.fillna({'rainfall': 0}, inplace=True)
+                
+                # Standardize text
+                df['district'] = df['district'].str.strip().str.upper()
+
+            else:
+                logging.warning(f"No cleaning logic defined for source: {source_name}")
+            
+            logging.info(f"Cleaned columns for {source_name}: {df.columns.tolist()}")
+            return df
+        
+        except KeyError as e:
+            logging.error(f"Column mapping error for {source_name}: Missing column {e}")
+            logging.error("Please check the CROP_COLUMNS_EXPECTED and RAIN_COLUMNS_EXPECTED dictionaries.")
+            return None
+        except Exception as e:
+            logging.error(f"Error during data cleaning for {source_name}: {e}")
+            return None
+
+    def store_in_sql(self, df, table_name):
+        # ... (keep existing store_in_sql)
+        try:
+            df.to_sql(table_name, self.conn, if_exists='replace', index=False)
+            logging.info(f"Data stored in SQL table: {table_name}")
+        except Exception as e:
+            logging.error(f"Error storing data in SQL for {table_name}: {e}")
+
+    def store_in_vector_db(self, df, collection_name):
+        # ... (keep existing store_in_vector_db)
+        try:
+            # Drop existing collection if it exists
+            if collection_name in [col.name for col in self.vector_store._client.list_collections()]:
+                self.vector_store._client.delete_collection(name=collection_name)
+                logging.info(f"Dropped existing vector collection: {collection_name}")
+
+            collection = self.vector_store._client.create_collection(name=collection_name)
+            
+            # Prepare data for Chroma
+            documents = []
+            metadatas = []
+            ids = []
+            
+            for index, row in df.iterrows():
+                # The "document" is the string representation of the row
+                doc_string = ", ".join([f"{col}: {val}" for col, val in row.items()])
+                documents.append(doc_string)
+                # The metadata is the dict representation
+                metadatas.append(row.to_dict())
+                ids.append(f"{collection_name}_{index}")
+
+            # Add to Chroma in batches
+            batch_size = 5000
+            for i in range(0, len(documents), batch_size):
+                logging.info(f"Storing batch {i//batch_size + 1} for collection {collection_name}")
+                # logging.info( "How much  it is left",  )
+                collection.add(
+                    documents=documents[i:i+batch_size],
+                    metadatas=metadatas[i:i+batch_size],
+                    ids=ids[i:i+batch_size]
+                )
+            logging.info(f"Data stored in vector DB collection: {collection_name}")
+        except Exception as e:
+            logging.error(f"Error storing data in vector DB for {collection_name}: {e}")
