@@ -83,7 +83,7 @@ class AnalysisAgent(BaseAgent):
         rainfall_trends = pd.DataFrame(data.get("rainfall_trends", []))
         
         analysis = {}
-        
+        logger.info("Analyzing trends with crop and rainfall data")
         if not crop_trends.empty:
             # Calculate production trends
             crop_trend_analysis = {}
@@ -133,6 +133,8 @@ class AnalysisAgent(BaseAgent):
         if not crop_trends.empty and not rainfall_trends.empty:
             correlation_analysis = await self._calculate_crop_rainfall_correlation(crop_trends, rainfall_trends)
             analysis["correlations"] = correlation_analysis
+        
+        logging.info("Completed trend analysis: ", analysis)
         
         return {"analysis": analysis}
     

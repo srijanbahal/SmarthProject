@@ -78,6 +78,18 @@ class AgentOrchestrator:
                     "details": analysis_result.get("error", "Unknown error")
                 }
             
+            # # Step 4: Visualization
+            # logger.info("Step 4: Visualization Generation")
+            # viz_result = await self.viz_agent.process({
+            #     "data": data_result["data"],
+            #     "analysis": analysis_result["analysis"],
+            #     "query_type": data_result.get("query_type", "general")
+            # })
+            
+            # if viz_result["status"] != "success":
+            #     logger.warning(f"Visualization failed: {viz_result.get('error', 'Unknown error')}")
+            #     viz_result["visualizations"] = []
+            
             # Step 4: Visualization
             logger.info("Step 4: Visualization Generation")
             viz_result = await self.viz_agent.process({
@@ -87,8 +99,23 @@ class AgentOrchestrator:
             })
             
             if viz_result["status"] != "success":
-                logger.warning(f"Visualization failed: {viz_result.get('error', 'Unknown error')}")
-                viz_result["visualizations"] = []
+                logger.error(f"Visualization generation failed: {viz_result.get('error', 'Unknown error')}")
+                # Return a full error response immediately
+                return {
+                    "status": "error",
+                    "error": "Failed to generate visualizations",
+                    "details": viz_result.get("error", "Unknown error"),
+                    "question": question,
+                    "processing_steps": {
+                        "query_understanding": query_result["status"],
+                        "data_retrieval": data_result["status"],
+                        "analysis": analysis_result["status"],
+                        "visualization": "error",
+                        "synthesis": "not_started"
+                    }
+                }
+            
+            
             
             # Step 5: Response Synthesis
             logger.info("Step 5: Response Synthesis")

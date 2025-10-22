@@ -64,23 +64,29 @@ class ResponseSynthesisAgent(BaseAgent):
         
         # Prepare context for LLM
         context = self._prepare_context(entities, analysis, query_type)
-        
+        logger.info("Prepared context for response synthesis", context)
         messages = [
             {
                 "role": "system",
-                "content": """You are an expert agricultural analyst specializing in Uttar Pradesh data. 
-                Provide clear, data-driven answers with specific numbers and insights.
-                Always cite data sources and be precise about time periods and locations.
-                Use professional but accessible language."""
+                "content": """You are an expert agricultural analyst. Your task is to synthesize a final answer based *ONLY* on the provided context.
+                DO NOT use any external knowledge. DO NOT hallucinate data.
+                If the context is insufficient to answer the question, you MUST state that the provided data does not contain the answer.
+                Provide clear, data-driven answers, citing *ONLY* the numbers and facts present in the context.
+                Be precise about time periods and locations as found in the context."""
             },
             {
                 "role": "user",
-                "content": f"""Question: {question}
+                "content": f"""Based *STRICTLY* on the context below, answer the following question.
+
+                Question: {question}
                 
-                Context: {context}
+                Context:
+                ---
+                {context}
+                ---
                 
-                Please provide a comprehensive answer based on the data analysis above. 
-                Include specific numbers, trends, and insights. Be sure to mention data sources and time periods."""
+                Provide a comprehensive, detailed answer using *only* the information from the context above.
+                Do not add any information that is not present in the context."""
             }
         ]
         
@@ -210,20 +216,57 @@ class ResponseSynthesisAgent(BaseAgent):
         
         return summary
     
+    # def _calculate_confidence(self, analysis: Dict, data: Dict) -> float:
+    #     """Calculate confidence score for the analysis"""
+    #     confidence = 0.5  # Base confidence
+        
+    #     # Increase confidence based on data availability
+    #     if data:
+    #         confidence += 0.2
+        
+    #     # Increase confidence based on analysis completeness
+    #     if analysis:
+    #         confidence += 0.2
+        
+    #     # Increase confidence if we have multiple data sources
+    #     if len(data) > 1:
+    #         confidence += 0.1
+        
+    #     return min(confidence, 1.0)
+
+
     def _calculate_confidence(self, analysis: Dict, data: Dict) -> float:
-        """Calculate confidence score for the analysis"""
-        confidence = 0.5  # Base confidence
+        """Calculate a more dynamic confidence score based on analysis quality."""
         
-        # Increase confidence based on data availability
+        # --- MODIFICATION START ---
+        confidence = 0.3  # Start with a lower base confidence
+        
+        # Check if relevant data was found
+        data_found = False
         if data:
-            confidence += 0.2
+            if any(key in data for key in ["crops", "crop_trends", "district_production", "crop_data"]):
+                confidence += 0.2
+                data_found = True
+            if any(key in data for key in ["rainfall", "rainfall_trends", "rainfall_data"]):
+                confidence += 0.1
+                data_found = True
         
-        # Increase confidence based on analysis completeness
-        if analysis:
-            confidence += 0.2
-        
-        # Increase confidence if we have multiple data sources
-        if len(data) > 1:
-            confidence += 0.1
-        
-        return min(confidence, 1.0)
+        # Check if analysis was performed and generated insights
+        if analysis and data_found:
+            confidence += 0.1 # Base score for analysis being present
+            
+            # Add confidence based on the *content* of the analysis
+            if analysis.get("key_findings"):
+                confidence += 0.1 * min(len(analysis["key_findings"]), 3) # Up to 0.3
+            
+            if analysis.get("correlations"):
+                confidence += 0.15 # Correlation is a high-value task
+            
+            if analysis.get("district_ranking"):
+                confidence += 0.1 # Ranking is useful
+                
+            if analysis.get("crop_performance"):
+                confidence += 0.15 # Policy analysis is high-value
+
+        # Cap at 0.99 for a realistic score
+        return min(round(confidence, 2), 0.99)

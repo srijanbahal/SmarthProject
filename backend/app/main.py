@@ -75,6 +75,7 @@ async def startup_event():
     groq_key = os.getenv("GROQ_API_KEY")
     # crop_key = os.getenv("DATA_GOV_API_KEY_CROP")
     # rainfall_key = os.getenv("DATA_GOV_API_KEY_RAINFALL")
+    logger.info("trackoing Project Samarth API")
     
     if not groq_key:
         logger.warning("GROQ_API_KEY not found in environment variables")
