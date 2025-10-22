@@ -156,13 +156,14 @@ class QueryUnderstandingAgent(BaseAgent):
             entities["states"] = ["Uttar Pradesh"]  # Default to UP
         
         # Extract crops
-        crop_keywords = ["rice", "wheat", "sugarcane", "maize", "bajra", "arhar", "tur", "moong", "groundnut", "onion"]
+        crop_keywords = ['Arhar/Tur', 'Bajra', 'Groundnut', 'Jowar', 'Maize', 'Moong(Green Gram)', 'Moth', 'Oilseeds total', 'Onion', 'Rice', 'Sesamum', 'Soyabean', 'Total foodgrain', 'Urad', 'Barley', 'Gram', 'Masoor', 'Peas & beans (Pulses)', 'Rapeseed &Mustard', 'Sunflower', 'Wheat', 'Potato', 'Sugarcane', 'Cotton(lint)', 'Castor seed', 'Linseed', 'Sannhamp', 'Jute', 'Turmeric', 'Dry chillies', 'Garlic', 'Guar seed', 'Sweet potato', 'Coriander', 'Dry ginger', 'Other Kharif pulses', 'Other  Rabi pulses', 'Tobacco', 'Banana', 'Small millets', 'Ragi', 'Ginger']
         for crop in crop_keywords:
             if crop in question_lower:
                 entities["crops"].append(crop.title())
         
         # Extract districts
-        district_keywords = ["agra", "lucknow", "kanpur", "varanasi", "allahabad", "meerut"]
+        district_keywords = ['AGRA', 'ALIGARH', 'ALLAHABAD', 'AMBEDKAR NAGAR', 'AMETHI', 'AMROHA', 'AURAIYA', 'AZAMGARH', 'BAGHPAT', 'BAHRAICH', 'BALLIA', 'BALRAMPUR', 'BANDA', 'BARABANKI', 'BAREILLY', 'BASTI', 'BIJNOR', 'BUDAUN', 'BULANDSHAHR', 'CHANDAULI', 'CHITRAKOOT', 'DEORIA', 'ETAH', 'ETAWAH', 'FAIZABAD', 'FARRUKHABAD', 'FATEHPUR', 'FIROZABAD', 'GAUTAM BUDDHA NAGAR', 'GHAZIABAD', 'GHAZIPUR', 'GONDA', 'GORAKHPUR', 'HAMIRPUR', 'HAPUR', 'HARDOI', 'HATHRAS', 'JALAUN', 'JAUNPUR', 'JHANSI', 'KANNAUJ', 'KANPUR DEHAT', 'KANPUR NAGAR', 'KASGANJ', 'KAUSHAMBI', 'KHERI', 'KUSHI NAGAR', 'LALITPUR', 'LUCKNOW', 'MAHARAJGANJ', 'MAHOBA', 'MAINPURI', 'MATHURA', 'MAU', 'MEERUT', 'MIRZAPUR', 'MORADABAD', 'MUZAFFARNAGAR', 'PILIBHIT', 'PRATAPGARH', 'RAE BARELI', 'RAMPUR', 'SAHARANPUR', 'SAMBHAL', 'SANT KABEER NAGAR', 'SANT RAVIDAS NAGAR', 'SHAHJAHANPUR', 'SHAMLI', 'SHRAVASTI', 'SIDDHARTH NAGAR', 'SITAPUR', 'SONBHADRA', 'SULTANPUR', 'UNNAO', 'VARANASI']
+
         for district in district_keywords:
             if district in question_lower:
                 entities["districts"].append(district.title())
