@@ -18,8 +18,6 @@ import {
 import {
   Search,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   Database,
   FileText,
   Activity,
@@ -28,6 +26,9 @@ import {
   Menu,
   X,
   Leaf,
+  Code2,
+  Table2,
+  Terminal,
 } from "lucide-react"
 
 const API_BASE_URL = "http://localhost:8000"
@@ -40,14 +41,7 @@ function App() {
   const [metadata, setMetadata] = useState(null)
   const [sampleQuestions, setSampleQuestions] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [expandedSections, setExpandedSections] = useState({
-    findings: true,
-    visualization: true,
-    sources: false,
-    queries: false,
-    data: false,
-    logs: false,
-  })
+  const [activeTab, setActiveTab] = useState("analysis")
 
   useEffect(() => {
     fetchMetadata()
@@ -124,24 +118,13 @@ function App() {
       if (!res.ok) throw new Error("Query failed")
       const data = await res.json()
       setResponse(data)
-      setExpandedSections({
-        findings: true,
-        visualization: true,
-        sources: false,
-        queries: false,
-        data: false,
-        logs: false,
-      })
+      setActiveTab("analysis")
     } catch (error) {
       console.error("Query error:", error)
       alert("Failed to process query. Please try again.")
     } finally {
       setLoading(false)
     }
-  }
-
-  const toggleSection = (section) => {
-    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
   const renderVisualization = () => {
@@ -192,6 +175,14 @@ function App() {
       </div>
     )
   }
+
+  const tabs = [
+    { id: "analysis", label: "Analysis", icon: Activity },
+    { id: "sources", label: "Data Sources", icon: Database },
+    { id: "queries", label: "SQL Queries", icon: Code2 },
+    { id: "data", label: "Retrieved Data", icon: Table2 },
+    { id: "logs", label: "System Logs", icon: Terminal },
+  ]
 
   return (
     <div className="w-screen min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
@@ -361,7 +352,7 @@ function App() {
               </form>
             </div>
 
-            {/* Results Section */}
+            {/* Results Section with Tabs */}
             {response && (
               <div className="space-y-6">
                 {/* Answer */}
@@ -382,215 +373,166 @@ function App() {
 
                 {/* Key Findings */}
                 {response.key_findings?.length > 0 && (
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <button
-                      onClick={() => toggleSection("findings")}
-                      className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 transition-all border-b border-slate-200 dark:border-slate-800"
-                    >
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                        Key Findings
-                      </h3>
-                      {expandedSections.findings ? (
-                        <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      )}
-                    </button>
-                    {expandedSections.findings && (
-                      <div className="p-6">
-                        <ul className="space-y-3">
-                          {response.key_findings.map((finding, idx) => (
-                            <li key={idx} className="flex items-start gap-3">
-                              <span className="shrink-0 w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                                {idx + 1}
-                              </span>
-                              <span className="text-slate-700 dark:text-slate-300">{finding}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      Key Findings
+                    </h3>
+                    <ul className="space-y-3">
+                      {response.key_findings.map((finding, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <span className="shrink-0 w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {idx + 1}
+                          </span>
+                          <span className="text-slate-700 dark:text-slate-300">{finding}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
                 {/* Visualization */}
                 {response.visualization && (
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <button
-                      onClick={() => toggleSection("visualization")}
-                      className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 transition-all border-b border-slate-200 dark:border-slate-800"
-                    >
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                        Visualization
-                      </h3>
-                      {expandedSections.visualization ? (
-                        <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      )}
-                    </button>
-                    {expandedSections.visualization && <div className="p-6">{renderVisualization()}</div>}
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      Visualization
+                    </h3>
+                    {renderVisualization()}
                   </div>
                 )}
 
-                {/* Citations & Sources */}
-                {response.citations?.sources?.length > 0 && (
+                {(response.citations?.sources?.length > 0 ||
+                  response.citations?.queries?.length > 0 ||
+                  response.results?.length > 0 ||
+                  response.logs?.length > 0) && (
                   <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <button
-                      onClick={() => toggleSection("sources")}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border-b border-slate-200 dark:border-slate-800"
-                    >
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        <Database className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                        Data Sources
-                      </h3>
-                      {expandedSections.sources ? (
-                        <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      )}
-                    </button>
-                    {expandedSections.sources && (
-                      <div className="p-6 space-y-3">
-                        {response.citations.sources.map((source, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg border border-teal-200 dark:border-teal-800"
-                          >
-                            <p className="font-semibold text-slate-900 dark:text-white">{source.table}</p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{source.file}</p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{source.rows_retrieved} rows</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                    {/* Tab Navigation */}
+                    <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                      {tabs.map((tab) => {
+                        const TabIcon = tab.icon
+                        const isActive = activeTab === tab.id
+                        const hasContent =
+                          (tab.id === "sources" && response.citations?.sources?.length > 0) ||
+                          (tab.id === "queries" && response.citations?.queries?.length > 0) ||
+                          (tab.id === "data" && response.results?.length > 0) ||
+                          (tab.id === "logs" && response.logs?.length > 0)
 
-                {/* SQL Queries */}
-                {response.citations?.queries?.length > 0 && (
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <button
-                      onClick={() => toggleSection("queries")}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border-b border-slate-200 dark:border-slate-800"
-                    >
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">SQL Queries</h3>
-                      {expandedSections.queries ? (
-                        <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      )}
-                    </button>
-                    {expandedSections.queries && (
-                      <div className="p-6 space-y-4">
-                        {response.citations.queries.map((query, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700"
+                        if (!hasContent) return null
+
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-3 font-medium text-sm whitespace-nowrap transition-all border-b-2 ${
+                              isActive
+                                ? "border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900"
+                                : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                            }`}
                           >
-                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                              Query {query.query_id}
-                            </p>
-                            <pre className="bg-slate-900 text-emerald-400 p-3 rounded-lg overflow-x-auto text-xs font-mono">
-                              {query.sql}
-                            </pre>
-                            <div className="mt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                              <p>Parameters: {JSON.stringify(query.parameters)}</p>
-                              <p>Execution Time: {query.execution_time}</p>
-                              <p>Rows Returned: {query.rows_returned}</p>
+                            <TabIcon className="w-4 h-4" />
+                            <span>{tab.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Tab Content */}
+                    <div className="p-6">
+                      {/* Data Sources Tab */}
+                      {activeTab === "sources" && response.citations?.sources?.length > 0 && (
+                        <div className="space-y-3">
+                          {response.citations.sources.map((source, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg border border-teal-200 dark:border-teal-800 hover:border-teal-300 dark:hover:border-teal-700 transition-colors"
+                            >
+                              <p className="font-semibold text-slate-900 dark:text-white">{source.table}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{source.file}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{source.rows_retrieved} rows</p>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Raw Data */}
-                {response.results?.length > 0 && (
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <button
-                      onClick={() => toggleSection("data")}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border-b border-slate-200 dark:border-slate-800"
-                    >
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">Retrieved Data</h3>
-                      {expandedSections.data ? (
-                        <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                          ))}
+                        </div>
                       )}
-                    </button>
-                    {expandedSections.data && (
-                      <div className="p-6 space-y-4">
-                        {response.results.map((result, idx) => (
-                          <div key={idx}>
-                            <h4 className="font-semibold text-slate-900 dark:text-white mb-3">
-                              {result.source_metadata.table}
-                            </h4>
-                            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-                              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                <thead className="bg-slate-100 dark:bg-slate-800">
-                                  <tr>
-                                    {result.data[0] &&
-                                      Object.keys(result.data[0]).map((key) => (
-                                        <th
-                                          key={key}
-                                          className="px-4 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide"
-                                        >
-                                          {key}
-                                        </th>
-                                      ))}
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
-                                  {result.data.slice(0, 10).map((row, rowIdx) => (
-                                    <tr
-                                      key={rowIdx}
-                                      className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                    >
-                                      {Object.values(row).map((val, valIdx) => (
-                                        <td
-                                          key={valIdx}
-                                          className="px-4 py-2 text-sm text-slate-700 dark:text-slate-300"
-                                        >
-                                          {val}
-                                        </td>
-                                      ))}
+
+                      {/* SQL Queries Tab */}
+                      {activeTab === "queries" && response.citations?.queries?.length > 0 && (
+                        <div className="space-y-4">
+                          {response.citations.queries.map((query, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                            >
+                              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Query {query.query_id}
+                              </p>
+                              <pre className="bg-slate-900 text-emerald-400 p-3 rounded-lg overflow-x-auto text-xs font-mono">
+                                {query.sql}
+                              </pre>
+                              <div className="mt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1">
+                                <p>Parameters: {JSON.stringify(query.parameters)}</p>
+                                <p>Execution Time: {query.execution_time}</p>
+                                <p>Rows Returned: {query.rows_returned}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Retrieved Data Tab */}
+                      {activeTab === "data" && response.results?.length > 0 && (
+                        <div className="space-y-4">
+                          {response.results.map((result, idx) => (
+                            <div key={idx}>
+                              <h4 className="font-semibold text-slate-900 dark:text-white mb-3">
+                                {result.source_metadata.table}
+                              </h4>
+                              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                  <thead className="bg-slate-100 dark:bg-slate-800">
+                                    <tr>
+                                      {result.data[0] &&
+                                        Object.keys(result.data[0]).map((key) => (
+                                          <th
+                                            key={key}
+                                            className="px-4 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide"
+                                          >
+                                            {key}
+                                          </th>
+                                        ))}
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700">
+                                    {result.data.slice(0, 10).map((row, rowIdx) => (
+                                      <tr
+                                        key={rowIdx}
+                                        className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                      >
+                                        {Object.values(row).map((val, valIdx) => (
+                                          <td
+                                            key={valIdx}
+                                            className="px-4 py-2 text-sm text-slate-700 dark:text-slate-300"
+                                          >
+                                            {val}
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* System Logs */}
-                {response.logs?.length > 0 && (
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <button
-                      onClick={() => toggleSection("logs")}
-                      className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border-b border-slate-200 dark:border-slate-800"
-                    >
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">System Logs</h3>
-                      {expandedSections.logs ? (
-                        <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                          ))}
+                        </div>
                       )}
-                    </button>
-                    {expandedSections.logs && (
-                      <div className="p-6">
+
+                      {/* System Logs Tab */}
+                      {activeTab === "logs" && response.logs?.length > 0 && (
                         <pre className="bg-slate-900 text-emerald-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
                           {response.logs.join("\n")}
                         </pre>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
