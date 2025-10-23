@@ -150,9 +150,9 @@ function App() {
     if (!ChartComponent || !DataComponent) return null;
 
     return (
-      <div className="bg-linear-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl border border-purple-200 dark:border-gray-700">
+      <div className="bg-white dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
         <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-purple-600" />
+          <BarChart3 className="w-6 h-6 text-black" />
           {viz.title}
         </h3>
         <ResponsiveContainer width="100%" height={400}>
@@ -168,10 +168,10 @@ function App() {
               }} 
             />
             <Legend />
-            <DataComponent 
-              dataKey={viz.y} 
-              fill="#8b5cf6" 
-              stroke="#8b5cf6"
+            <DataComponent
+              dataKey={viz.y}
+              fill="#000000"
+              stroke="#000000"
               strokeWidth={2}
             />
           </ChartComponent>
@@ -181,17 +181,17 @@ function App() {
   };
 
   return (
-    <div className="w-screen min-h-screen bg-linear-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6  border border-purple-200 dark:border-gray-700">
+    <div className="w-screen min-h-screen bg-white dark:bg-gray-900 p-6">
       {/* Header */}
       <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-linear-to-br from-purple-600 to-indigo-600 p-2 rounded-xl">
+              <div className="bg-black p-2 rounded-xl">
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-linear-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-black dark:text-white">
                   Project Samarth
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -218,13 +218,13 @@ function App() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sticky top-24">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  <TrendingUp className="w-5 h-5 text-black dark:text-white" />
                   Sample Questions
                 </h2>
                 <button
                   onClick={generateNewQuestions}
                   disabled={loadingQuestions}
-                  className="text-xs bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full transition-all disabled:opacity-50 flex items-center gap-1"
+                  className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-3 py-1 rounded-full transition-all disabled:opacity-50 flex items-center gap-1"
                   title="Generate new questions"
                 >
                   {loadingQuestions ? (
@@ -247,9 +247,9 @@ function App() {
                       key={idx}
                       onClick={() => handleQuestionClick(sq.question)}
                       disabled={loadingQuestions}
-                      className="w-full text-left px-4 py-3 bg-linear-to-r from-purple-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 hover:from-purple-100 hover:to-indigo-100 dark:hover:from-gray-600 dark:hover:to-gray-500 rounded-xl transition-all text-sm font-medium text-gray-700 dark:text-gray-200 border border-purple-200 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full text-left px-4 py-3 bg-gray-50 dark:from-gray-700 dark:to-gray-600 hover:bg-gray-100 dark:hover:from-gray-600 dark:hover:to-gray-500 rounded-xl transition-all text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <div className="font-semibold text-purple-600 dark:text-purple-400 text-xs mb-1">
+                      <div className="font-semibold text-black dark:text-white text-xs mb-1">
                         {sq.label}
                       </div>
                       {sq.question}
@@ -295,7 +295,7 @@ function App() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     placeholder="e.g., Compare rice production in Assam and Odisha over last 5 years"
-                    className="w-full px-4 py-3 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none transition-all"
+                    className="w-full px-4 py-3 pr-12 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent dark:bg-gray-700 dark:text-white resize-none transition-all"
                     rows="3"
                     disabled={loading}
                   />
@@ -304,7 +304,7 @@ function App() {
                 <button
                   type="submit"
                   disabled={loading || !question.trim()}
-                  className="mt-4 w-full bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="mt-4 w-full bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -327,7 +327,7 @@ function App() {
                 {/* Answer */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                    <Activity className="w-6 h-6 text-purple-600" />
+                    <Activity className="w-6 h-6 text-black dark:text-white" />
                     Answer
                   </h2>
                   <div 
@@ -343,10 +343,10 @@ function App() {
                   <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <button
                       onClick={() => toggleSection('findings')}
-                      className="w-full px-6 py-4 flex items-center justify-between bg-linear-to-r from-amber-50 to-orange-50 dark:from-gray-700 dark:to-gray-600 hover:from-amber-100 hover:to-orange-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all"
+                      className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 dark:from-gray-700 dark:to-gray-600 hover:bg-gray-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all"
                     >
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-amber-600" />
+                        <FileText className="w-5 h-5 text-black dark:text-white" />
                         Key Findings
                       </h3>
                       {expandedSections.findings ? (
@@ -360,7 +360,7 @@ function App() {
                         <ul className="space-y-2">
                           {response.key_findings.map((finding, idx) => (
                             <li key={idx} className="flex items-start gap-3">
-                              <span className="shrink-0 w-6 h-6 bg-linear-to-br from-amber-500 to-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                              <span className="shrink-0 w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-xs font-bold">
                                 {idx + 1}
                               </span>
                               <span className="text-gray-700 dark:text-gray-300">{finding}</span>
@@ -377,10 +377,10 @@ function App() {
                   <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <button
                       onClick={() => toggleSection('visualization')}
-                      className="w-full px-6 py-4 flex items-center justify-between bg-linear-to-r from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 hover:from-purple-100 hover:to-blue-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all"
+                      className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 dark:from-gray-700 dark:to-gray-600 hover:bg-gray-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all"
                     >
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-purple-600" />
+                        <BarChart3 className="w-5 h-5 text-black dark:text-white" />
                         Visualization
                       </h3>
                       {expandedSections.visualization ? (
