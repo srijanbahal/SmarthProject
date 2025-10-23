@@ -1,7 +1,0 @@
-streamlit
-pandas
-plotly
-numpy
-groq
-requests
-dotenv
